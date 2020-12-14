@@ -15,10 +15,10 @@ import { handler } from "https://deno.land/x/serverless_oak/mod.ts";
 
 const router = new Router();
 router
-  .get("/echo", (context) => {
+  .get("/echo", (context: RouterContext) => {
     context.response.body = "Hey!";
   })
-  .get("/echo/:text", (context) => {
+  .get("/echo/:text", (context: RouterContext) => {
     context.response.body = context.params.text;
   });
 
