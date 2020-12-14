@@ -4,6 +4,8 @@ A simple library for mapping AWS API Gateway events to/from an Oak application.
 
 ## Usage
 
+### Simple example echo lambda
+
 ```typescript
 import type {
   APIGatewayProxyEvent,
