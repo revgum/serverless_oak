@@ -2,6 +2,10 @@
 
 A simple library for mapping AWS API Gateway events to/from an Oak application.
 
+## Deno runtime on AWS Lambda
+
+Check out the awesome [deno-lambda](https://github.com/hayd/deno-lambda) for more details on how to build and deploy Lambda functions with the Deno runtime.
+
 ## Usage
 
 ### Simple example echo lambda
