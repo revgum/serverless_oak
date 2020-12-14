@@ -26,8 +26,12 @@ const app = new Application();
 app.use(router.routes());
 app.use(router.allowedMethods());
 
-export default async (event: APIGatewayProxyEvent, context: Context) => {
+export const Echo = async (event: APIGatewayProxyEvent, context: Context) => {
   return handler(event, context, app);
+};
+
+export default {
+  Echo,
 };
 ```
 
