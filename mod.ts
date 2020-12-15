@@ -66,7 +66,13 @@ export const apiGatewayResponse = async (response?: ServerResponse) => {
   } else {
     arrayBuf = response.body;
   }
-  return { ...response, body: new TextDecoder().decode(arrayBuf).trim() };
+  const rawHeaders: { [key: string]: string } = {};
+  response.headers.forEach((v, k) => (rawHeaders[k] = v));
+  return {
+    ...response,
+    body: new TextDecoder().decode(arrayBuf).trim(),
+    headers: rawHeaders,
+  };
 };
 
 export const handler = async (
