@@ -69,7 +69,7 @@ export const apiGatewayResponse = async (response?: ServerResponse) => {
   const rawHeaders: { [key: string]: string } = {};
   response.headers.forEach((v, k) => (rawHeaders[k] = v));
   return {
-    ...response,
+    statusCode: response.status,
     body: new TextDecoder().decode(arrayBuf).trim(),
     headers: rawHeaders,
   };
