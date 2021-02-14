@@ -30,7 +30,7 @@ export const serverRequest = (
   event: APIGatewayProxyEvent,
   context: Context
 ): ServerRequest => {
-  const headers = new Headers(event.headers);
+  const headers = new Headers(event.headers ?? undefined);
   const url = eventUrl(event);
   const body = <Deno.Reader>new StringReader(event.body ?? "");
 
