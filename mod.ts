@@ -56,7 +56,7 @@ export const apiGatewayResponse = async (response?: ServerResponse) => {
     return { statusCode: 500 };
   }
   if (!response.body) {
-    return response;
+    return { statusCode: response.status };
   }
   let arrayBuf;
   if (isReader(response.body)) {
