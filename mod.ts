@@ -30,7 +30,7 @@ export const serverRequest = (
   event: APIGatewayProxyEvent,
   context: Context
 ): ServerRequest => {
-  const headers = new Headers(event.headers);
+  const headers = new Headers(event.headers ?? undefined);
   const url = eventUrl(event);
   const body = <Deno.Reader>new StringReader(event.body ?? "");
 
@@ -56,7 +56,7 @@ export const apiGatewayResponse = async (response?: ServerResponse) => {
     return { statusCode: 500 };
   }
   if (!response.body) {
-    return response;
+    return { statusCode: response.status };
   }
   let arrayBuf;
   if (isReader(response.body)) {
@@ -69,7 +69,7 @@ export const apiGatewayResponse = async (response?: ServerResponse) => {
   const rawHeaders: { [key: string]: string } = {};
   response.headers.forEach((v, k) => (rawHeaders[k] = v));
   return {
-    ...response,
+    statusCode: response.status,
     body: new TextDecoder().decode(arrayBuf).trim(),
     headers: rawHeaders,
   };
