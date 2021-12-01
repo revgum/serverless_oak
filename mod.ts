@@ -2,9 +2,7 @@ import { decode, StringReader } from "./deps.ts";
 import type {
   APIGatewayProxyEvent,
   Application,
-  Context,
-  ServerResponse,
-  ServerRequest,
+  Context
 } from "./deps.ts";
 
 // deno-lint-ignore no-explicit-any
@@ -29,7 +27,7 @@ const eventUrl = (event: APIGatewayProxyEvent): string => {
 export const serverRequest = (
   event: APIGatewayProxyEvent,
   context: Context
-): ServerRequest => {
+): Request => {
   const headers = new Headers(event.headers as any ?? undefined);
   const url = eventUrl(event);
   const body = <Deno.Reader>new StringReader(event.body ?? "");
@@ -46,9 +44,9 @@ export const serverRequest = (
   return {
     method: event.httpMethod,
     url,
-    headers: headers as any,
+    headers: headers,
     body,
-  } as any;
+  } as unknown as Request;
 };
 
 export const apiGatewayResponse = async (response?: Response) => {
@@ -61,16 +59,17 @@ export const apiGatewayResponse = async (response?: Response) => {
   let arrayBuf;
   if (isReader(response.body)) {
     const buf = new Uint8Array(1024);
-    const n = <number>await response.body.read(buf);
+    const n = (await response.body.read(buf)) as number;
     arrayBuf = buf.subarray(0, n);
   } else {
-    arrayBuf = response.body;
+    const result = await response.body.getReader().read();
+    arrayBuf = result.value;
   }
   const rawHeaders: { [key: string]: string } = {};
-  response.headers.forEach((v: any, k: any) => (rawHeaders[k] = v));
+  response.headers.forEach((value: string, key: string) => (rawHeaders[key] = value));
   return {
     statusCode: response.status,
-    body: new TextDecoder().decode(arrayBuf as any).trim(),
+    body: new TextDecoder().decode(arrayBuf).trim(),
     headers: rawHeaders,
   };
 };
@@ -81,6 +80,6 @@ export const handler = async (
   app: Application
 ) => {
   const request = serverRequest(event, context);
-  const response = await app.handle(request as any);
+  const response = await app.handle(request);
   return apiGatewayResponse(response);
 };
