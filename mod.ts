@@ -4,8 +4,6 @@ import type {
   Context
 } from "./deps.ts";
 
-const HOST = "http://localhost/";
-
 // deno-lint-ignore no-explicit-any
 const isReader = (value: any): value is Deno.Reader =>
   value &&
@@ -14,14 +12,12 @@ const isReader = (value: any): value is Deno.Reader =>
   typeof value.read === "function";
 
 const eventUrl = (event: APIGatewayProxyEvent): string => {
-  const path = event.path[0] === '/' ? event.path.substr(1) : event.path;
-
   if (event.queryStringParameters) {
-    return `${HOST}${path}?${Object.keys(event.queryStringParameters)
+    return `${event.path}?${Object.keys(event.queryStringParameters)
       .map((k) => `${k}=${event.queryStringParameters![k]}`)
       .join("&")}`;
   }
-  return `${HOST}${path}`;
+  return event.path;
 };
 
 export const serverRequest = (
