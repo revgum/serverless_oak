@@ -13,7 +13,7 @@ const isReader = (value: any): value is Deno.Reader =>
   typeof value.read === "function";
 
 const eventBody = (event: APIGatewayProxyEvent): string =>
-  event.isBase64Encoded ? window.atob(event.body || "") : event.body || "";
+  event.isBase64Encoded ? atob(event.body || "") : event.body || "";
 
 const eventUrl = (event: APIGatewayProxyEvent): string => {
   if (event.queryStringParameters) {
