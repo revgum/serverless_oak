@@ -1,9 +1,10 @@
-import { decode, StringReader } from "./deps.ts";
 import type {
   APIGatewayProxyEvent,
   Application,
   Context
 } from "./deps.ts";
+
+const HOST = "http://localhost/";
 
 // deno-lint-ignore no-explicit-any
 const isReader = (value: any): value is Deno.Reader =>
@@ -12,41 +13,38 @@ const isReader = (value: any): value is Deno.Reader =>
   "read" in value &&
   typeof value.read === "function";
 
-const eventBody = (event: APIGatewayProxyEvent): string =>
-  event.isBase64Encoded ? atob(event.body || "") : event.body || "";
-
 const eventUrl = (event: APIGatewayProxyEvent): string => {
+  const path = event.path[0] === '/' ? event.path.substr(1) : event.path;
+
   if (event.queryStringParameters) {
-    return `${event.path}?${Object.keys(event.queryStringParameters)
+    return `${HOST}${path}?${Object.keys(event.queryStringParameters)
       .map((k) => `${k}=${event.queryStringParameters![k]}`)
       .join("&")}`;
   }
-  return event.path;
+  return `${HOST}${path}`;
 };
 
 export const serverRequest = (
   event: APIGatewayProxyEvent,
   context: Context
 ): Request => {
-  const headers = new Headers(event.headers as any ?? undefined);
+  const headers = new Headers(event.headers as unknown as string[][] ?? undefined);
   const url = eventUrl(event);
-  const body = <Deno.Reader>new StringReader(event.body ?? "");
+  const body = event.body ? new TextEncoder().encode(event.body) : undefined;
 
-  if (event.body && !headers.get("Content-Length")) {
-    const body = eventBody(event);
-    headers.set("Content-Length", decode(body).byteLength.toString());
+  if (body && !headers.get("Content-Length")) {
+    headers.set("Content-Length", body.length.toString());
   }
   const clonedEvent = JSON.parse(JSON.stringify(event));
   delete clonedEvent.body;
   headers.set("x-apigateway-event", JSON.stringify(clonedEvent));
   headers.set("x-apigateway-context", JSON.stringify(context));
 
-  return {
+  return new Request(url, {
     method: event.httpMethod,
-    url,
     headers: headers,
     body,
-  } as unknown as Request;
+  });
 };
 
 export const apiGatewayResponse = async (response?: Response) => {
