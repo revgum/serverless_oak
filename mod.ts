@@ -53,7 +53,7 @@ export const apiGatewayResponse = async (response?: Response) => {
   let arrayBuf;
   if (isReader(response.body)) {
     const buf = new Uint8Array(1024);
-    const n = (await response.body.read(buf)) as number;
+    const n = (await response.body.read(buf))!;
     arrayBuf = buf.subarray(0, n);
   } else {
     const result = await response.body.getReader().read();
