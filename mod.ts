@@ -1,10 +1,7 @@
-import { decode, StringReader } from "./deps.ts";
 import type {
   APIGatewayProxyEvent,
   Application,
-  Context,
-  ServerResponse,
-  ServerRequest,
+  Context
 } from "./deps.ts";
 
 // deno-lint-ignore no-explicit-any
@@ -13,9 +10,6 @@ const isReader = (value: any): value is Deno.Reader =>
   typeof value === "object" &&
   "read" in value &&
   typeof value.read === "function";
-
-const eventBody = (event: APIGatewayProxyEvent): string =>
-  event.isBase64Encoded ? window.atob(event.body || "") : event.body || "";
 
 const eventUrl = (event: APIGatewayProxyEvent): string => {
   if (event.queryStringParameters) {
@@ -29,29 +23,27 @@ const eventUrl = (event: APIGatewayProxyEvent): string => {
 export const serverRequest = (
   event: APIGatewayProxyEvent,
   context: Context
-): ServerRequest => {
-  const headers = new Headers(event.headers ?? undefined);
+): Request => {
+  const headers = new Headers(event.headers as unknown as string[][] ?? undefined);
   const url = eventUrl(event);
-  const body = <Deno.Reader>new StringReader(event.body ?? "");
+  const body = event.body ? new TextEncoder().encode(event.body) : undefined;
 
-  if (event.body && !headers.get("Content-Length")) {
-    const body = eventBody(event);
-    headers.set("Content-Length", decode(body).byteLength.toString());
+  if (body && !headers.get("Content-Length")) {
+    headers.set("Content-Length", body.length.toString());
   }
   const clonedEvent = JSON.parse(JSON.stringify(event));
   delete clonedEvent.body;
   headers.set("x-apigateway-event", JSON.stringify(clonedEvent));
   headers.set("x-apigateway-context", JSON.stringify(context));
 
-  return {
+  return new Request(url, {
     method: event.httpMethod,
-    url,
-    headers,
+    headers: headers,
     body,
-  } as ServerRequest;
+  });
 };
 
-export const apiGatewayResponse = async (response?: ServerResponse) => {
+export const apiGatewayResponse = async (response?: Response) => {
   if (!response) {
     return { statusCode: 500 };
   }
@@ -61,13 +53,14 @@ export const apiGatewayResponse = async (response?: ServerResponse) => {
   let arrayBuf;
   if (isReader(response.body)) {
     const buf = new Uint8Array(1024);
-    const n = <number>await response.body.read(buf);
+    const n = (await response.body.read(buf))!;
     arrayBuf = buf.subarray(0, n);
   } else {
-    arrayBuf = response.body;
+    const result = await response.body.getReader().read();
+    arrayBuf = result.value;
   }
   const rawHeaders: { [key: string]: string } = {};
-  response.headers.forEach((v, k) => (rawHeaders[k] = v));
+  response.headers.forEach((value: string, key: string) => (rawHeaders[key] = value));
   return {
     statusCode: response.status,
     body: new TextDecoder().decode(arrayBuf).trim(),
